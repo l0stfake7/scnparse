@@ -3,11 +3,13 @@ from common import Identifier, UIntNum, DecimalNum, Position, FileName
 
 # common
 NodeTag = CaselessKeyword('node')
+Name = Keyword('none').setParseAction(replaceWith(None)) | Identifier
+
 Preamble = \
     NodeTag + \
     DecimalNum('max_dist') + \
     DecimalNum('min_dist') + \
-    Identifier('Name')
+    Name('name')
 
 # track
 TrackTag = CaselessKeyword('track')
@@ -23,16 +25,17 @@ TrackPrefix = \
     UIntNum('damage_flag') + \
     Environment('environment') 
 
-TrackSuffix = Each([\
-    Optional(CaselessKeyword('velocity') + DecimalNum('velocity')), \
-    Optional(CaselessKeyword('event0') + Identifier('event0')), \
-    Optional(CaselessKeyword('event1') + Identifier('event1')), \
-    Optional(CaselessKeyword('event2') + Identifier('event2')), \
-    Optional(CaselessKeyword('isolated') + Identifier('isolated'))
-])
+TrackSuffix = \
+    Optional(CaselessKeyword('velocity') + DecimalNum('velocity')) + \
+    Group(Each([
+        Optional(CaselessKeyword('event0') + Identifier('event0')), \
+        Optional(CaselessKeyword('event1') + Identifier('event1')), \
+        Optional(CaselessKeyword('event2') + Identifier('event2')), \
+        Optional(CaselessKeyword('isolated') + Identifier('isolated')) \
+    ]))('events')
 
-VisTag = CaselessKeyword("vis").setParseAction(replaceWith(True))("visibile")
-UnvisTag = CaselessKeyword("unvis").setParseAction(replaceWith(False))("visibile")
+VisTag = CaselessKeyword('vis').setParseAction(replaceWith(True))('visible')
+UnvisTag = CaselessKeyword('unvis').setParseAction(replaceWith(False))('visible')
 
 TrackMaterialParams = \
     Group(
@@ -44,33 +47,23 @@ TrackMaterialParams = \
         DecimalNum('width') + \
         DecimalNum('slope'))('ballast')
 
-TrackMaterial = (VisTag + TrackMaterialParams("material")) | UnvisTag
+TrackMaterial = (VisTag + TrackMaterialParams('material')) | UnvisTag
 
-TrackGeometry = \
-    Position('point') + \
-    DecimalNum('roll') + \
-    Position('control') + \
-    Position('control') + \
-    Position('point') + \
-    DecimalNum('roll') + \
-    DecimalNum('radius')
+Point = Position.setResultsName('point', True)
+Roll = DecimalNum.setResultsName('roll', True)
+Control = Position.setResultsName('control', True)
+Radius = DecimalNum.setResultsName('radius', True)
 
-SwitchGeometry = \
-    TrackGeometry + \
-    Position('point') + \
-    DecimalNum('roll') + \
-    Position('control') + \
-    Position('control') + \
-    DecimalNum('roll') + \
-    DecimalNum('radius')
+TrackGeometry = Point + Roll + Control + Control + Point + Roll + Radius
+SwitchGeometry = TrackGeometry + TrackGeometry
 
 Track = \
     Preamble + \
     TrackTag + \
     CaselessKeyword('normal') + \
     TrackPrefix + \
-    TrackMaterial('material') + \
-    TrackGeometry + \
+    TrackMaterial + \
+    TrackGeometry('geometry') + \
     TrackSuffix + \
     EndTrackTag
 
@@ -80,5 +73,8 @@ Switch = \
     CaselessKeyword('switch') + \
     TrackPrefix + \
     TrackMaterial + \
-    SwitchGeometry + \
-    TrackSuffix
+    SwitchGeometry('geometry') + \
+    TrackSuffix + \
+    EndTrackTag
+
+Node = Track('track') | Switch('switch')
