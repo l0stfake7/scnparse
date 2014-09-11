@@ -23,11 +23,13 @@ TrackPrefix = \
     UIntNum('damage_flag') + \
     Environment('environment') 
 
-TrackSuffix = \
-    Optional(DecimalNum('velocity')) + \
-    Optional(CaselessKeyword('event0') + Identifier('event0')) + \
-    Optional(CaselessKeyword('event1') + Identifier('event1')) + \
-    Optional(CaselessKeyword('event2') + Identifier('event2')) 
+TrackSuffix = Each([\
+    Optional(CaselessKeyword('velocity') + DecimalNum('velocity')), \
+    Optional(CaselessKeyword('event0') + Identifier('event0')), \
+    Optional(CaselessKeyword('event1') + Identifier('event1')), \
+    Optional(CaselessKeyword('event2') + Identifier('event2')), \
+    Optional(CaselessKeyword('isolated') + Identifier('isolated'))
+])
 
 VisTag = CaselessKeyword("vis").setParseAction(replaceWith(True))("visibile")
 UnvisTag = CaselessKeyword("unvis").setParseAction(replaceWith(False))("visibile")
@@ -37,10 +39,10 @@ TrackMaterialParams = \
         FileName('tex') + \
         DecimalNum('scale'))('rail') + \
     Group(
-        FileName('tex'))('rail') + \
+        FileName('tex') + \
         DecimalNum('height') + \
         DecimalNum('width') + \
-        DecimalNum('slope')('ballast')
+        DecimalNum('slope'))('ballast')
 
 TrackMaterial = (VisTag + TrackMaterialParams("material")) | UnvisTag
 
@@ -78,6 +80,5 @@ Switch = \
     CaselessKeyword('switch') + \
     TrackPrefix + \
     TrackMaterial + \
-    TrackGeometry + \
     SwitchGeometry + \
     TrackSuffix
