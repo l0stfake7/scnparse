@@ -10,47 +10,74 @@ Preamble = \
     Identifier('Name')
 
 # track
-TrackType = oneOf('normal switch road river')
+TrackTag = CaselessKeyword('track')
+EndTrackTag = CaselessKeyword('endtrack')
+
 Environment = oneOf('flat mountains canyon tunnel')
-
-TrackMaterial = \
-    Group(
-        FileName('tex') + \
-        DecimalNum('scale'))('ballast') + \
-    Group(    
-        FileName('tex') + \
-        DecimalNum('scale'))('rail') + \
-    Group(    
-        DecimalNum('height') + \
-        DecimalNum('width') + \
-        DecimalNum('slope'))('ballast');
-
-TrackGeometry = \
-    Position('point_1') + \
-    DecimalNum('roll_1') + \
-    Position('control_1') + \
-    Position('control_2') + \
-    Position('point_2') + \
-    DecimalNum('roll_2') + \
-    DecimalNum('radius')
-
-SwitchGeometry = \
-    TrackGeometry + \
-    Position('point_3') + \
-    DecimalNum('roll_3') + \
-    Position('control_3') + \
-    Position('control_4') + \
-    DecimalNum('roll_4') + \
-    DecimalNum('radius_2')
-
-TrackParameters = \
-    Preamble + \
-    CaselessKeyword('track') + \
-    TrackType('kind') + \
+TrackPrefix = \
     DecimalNum('length') + \
     DecimalNum('width') + \
     DecimalNum('friction') + \
     DecimalNum('sound_dist') + \
     UIntNum('quality') + \
     UIntNum('damage_flag') + \
-    Environment('environment')
+    Environment('environment') 
+
+TrackSuffix = \
+    Optional(DecimalNum('velocity')) + \
+    Optional(CaselessKeyword('event0') + Identifier('event0')) + \
+    Optional(CaselessKeyword('event1') + Identifier('event1')) + \
+    Optional(CaselessKeyword('event2') + Identifier('event2')) 
+
+VisTag = CaselessKeyword("vis").setParseAction(replaceWith(True))("visibile")
+UnvisTag = CaselessKeyword("unvis").setParseAction(replaceWith(False))("visibile")
+
+TrackMaterialParams = \
+    Group(
+        FileName('tex') + \
+        DecimalNum('scale'))('rail') + \
+    Group(
+        FileName('tex'))('rail') + \
+        DecimalNum('height') + \
+        DecimalNum('width') + \
+        DecimalNum('slope')('ballast')
+
+TrackMaterial = (VisTag + TrackMaterialParams("material")) | UnvisTag
+
+TrackGeometry = \
+    Position('point') + \
+    DecimalNum('roll') + \
+    Position('control') + \
+    Position('control') + \
+    Position('point') + \
+    DecimalNum('roll') + \
+    DecimalNum('radius')
+
+SwitchGeometry = \
+    TrackGeometry + \
+    Position('point') + \
+    DecimalNum('roll') + \
+    Position('control') + \
+    Position('control') + \
+    DecimalNum('roll') + \
+    DecimalNum('radius')
+
+Track = \
+    Preamble + \
+    TrackTag + \
+    CaselessKeyword('normal') + \
+    TrackPrefix + \
+    TrackMaterial('material') + \
+    TrackGeometry + \
+    TrackSuffix + \
+    EndTrackTag
+
+Switch = \
+    Preamble + \
+    TrackTag + \
+    CaselessKeyword('switch') + \
+    TrackPrefix + \
+    TrackMaterial + \
+    TrackGeometry + \
+    SwitchGeometry + \
+    TrackSuffix
